@@ -16,6 +16,8 @@
   .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:4px; background:linear-gradient(90deg,var(--naranja),var(--naranja2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
   .logo span { color:var(--blanco); -webkit-text-fill-color:var(--blanco); font-size:0.65rem; font-family:'DM Sans'; display:block; letter-spacing:3px; text-transform:uppercase; margin-top:-4px; font-weight:300; }
   .sheet-link { font-size:0.72rem; color:var(--texto); text-decoration:none; border:1px solid #333; padding:6px 12px; border-radius:100px; }
+  .sync-banner { background:rgba(255,87,34,0.1); border-bottom:1px solid rgba(255,87,34,0.2); padding:8px 20px; font-size:0.72rem; color:var(--naranja); text-align:center; display:none; }
+  .sync-banner.show { display:block; }
   .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#222; border-bottom:1px solid #222; }
   .stat { background:var(--negro); padding:14px 16px; }
   .stat-label { font-size:0.58rem; letter-spacing:2px; text-transform:uppercase; color:var(--texto); margin-bottom:4px; }
@@ -86,6 +88,8 @@
   <div class="logo">Samuel Fit <span>Plan de Entrenamiento · 2025</span></div>
   <a class="sheet-link" id="sheet-link" href="#" target="_blank">📊 Sheets</a>
 </div>
+
+<div class="sync-banner" id="sync-banner">⟳ Sincronizando con Sheets...</div>
 
 <div class="stats">
   <div class="stat"><div class="stat-label">Sesiones semana</div><div class="stat-value" id="stat-ses">—</div><div class="stat-sub">de 5 posibles</div></div>
@@ -160,22 +164,16 @@ var PLAN = {
 };
 
 var diaActual="lunes", completados={}, pesos={}, notas={}, syncTimers={};
-var resumen={sesiones:0,ejercicios:0,dias:[]};
 
 function k(dia,bi,ei){ return dia+"-"+bi+"-"+ei; }
 
-// ============================================================
-// API — todo via GET para evitar CORS
-// ============================================================
 function apiGet(params) {
-  var url = API + "?" + Object.keys(params).map(function(k){
-    return k + "=" + encodeURIComponent(params[k]);
-  }).join("&");
-  return fetch(url).then(function(r){ return r.json(); }).catch(function(e){ return {ok:false,msg:e.toString()}; });
+  var url = API+"?"+Object.keys(params).map(function(k){ return k+"="+encodeURIComponent(params[k]); }).join("&");
+  return fetch(url).then(function(r){ return r.json(); }).catch(function(){ return {ok:false}; });
 }
 
 // ============================================================
-// INIT
+// INIT — carga estado desde Sheets al arrancar
 // ============================================================
 window.onload = function() {
   cargarLocal();
@@ -183,14 +181,57 @@ window.onload = function() {
   diaActual=dias[new Date().getDay()];
   renderNav();
   renderDia();
-  cargarResumen();
   cargarSheetUrl();
+  cargarResumen();
+  // Sincronizar estado del día actual desde Sheets
+  sincronizarEstadoDesdeSheets(diaActual);
 };
+
+function sincronizarEstadoDesdeSheets(dia) {
+  if (!PLAN[dia]) return; // día de descanso
+  var banner = document.getElementById("sync-banner");
+  banner.classList.add("show");
+
+  apiGet({ action:"estadoHoy", dia:dia }).then(function(resp) {
+    banner.classList.remove("show");
+    if (!resp || !resp.ejercicios || resp.ejercicios.length === 0) return;
+
+    var d = PLAN[dia];
+    var cambios = false;
+
+    // Para cada ejercicio del plan, ver si está en Sheets
+    d.bloques.forEach(function(bloque, bi) {
+      bloque.e.forEach(function(ej, ei) {
+        var kk = k(dia, bi, ei);
+        var enSheets = resp.ejercicios.indexOf(ej.n) !== -1;
+
+        if (enSheets && !completados[kk]) {
+          // Sheets lo tiene pero local no → marcar
+          completados[kk] = true;
+          if (resp.pesos && resp.pesos[ej.n]) pesos[kk] = resp.pesos[ej.n];
+          if (resp.notas && resp.notas[ej.n]) notas[kk] = resp.notas[ej.n];
+          cambios = true;
+        } else if (!enSheets && completados[kk]) {
+          // Local lo tiene pero Sheets no → desmarcar (Sheets es la fuente de verdad)
+          completados[kk] = false;
+          cambios = true;
+        }
+      });
+    });
+
+    if (cambios) {
+      guardarLocal();
+      renderDia(); // re-renderizar con el estado correcto
+      mostrarToast("✓ Sincronizado con Sheets");
+    }
+  }).catch(function() {
+    banner.classList.remove("show");
+  });
+}
 
 function cargarResumen() {
   apiGet({action:"resumen"}).then(function(d){
     if(d&&typeof d.sesiones!=="undefined"){
-      resumen=d;
       document.getElementById("stat-ses").textContent=d.sesiones;
       document.getElementById("stat-ej").textContent=d.ejercicios;
       document.getElementById("p-ses").textContent=d.sesiones+"/5";
@@ -222,6 +263,7 @@ function cambiarDia(dia) {
   diaActual=dia;
   document.querySelectorAll(".dia-btn").forEach(function(b){ b.classList.toggle("activo",b.dataset.dia===dia); });
   renderDia();
+  sincronizarEstadoDesdeSheets(dia);
 }
 
 // ============================================================
@@ -264,7 +306,7 @@ function renderDia() {
         :"")
         +'</div>'
         +'<div><div class="ej-series-val">'+ej.s+'</div><div class="ej-series-lab">'+ej.r+'</div></div>'
-        +'<div class="ej-check" onclick="toggle(\''+kk+'\',\''+bNom+'\')">'+( hecho?"✓":"")+'</div>'
+        +'<div class="ej-check" onclick="toggle(\''+kk+'\',\''+bNom+'\')">'+(hecho?"✓":"")+'</div>'
         +'</div>';
     });
     html+='</div>';
@@ -275,14 +317,13 @@ function renderDia() {
 }
 
 // ============================================================
-// TOGGLE → guarda en Sheets via GET
+// TOGGLE
 // ============================================================
-function toggle(kk, bloqueNombre) {
+function toggle(kk,bloqueNombre){
   var d=PLAN[diaActual];
   var parts=kk.split("-");
-  var bi=parseInt(parts[1]), ei=parseInt(parts[2]);
+  var bi=parseInt(parts[1]),ei=parseInt(parts[2]);
   var ej=d.bloques[bi].e[ei];
-
   completados[kk]=!completados[kk];
   var el=document.getElementById("ej-"+kk);
   if(!el) return;
@@ -290,26 +331,12 @@ function toggle(kk, bloqueNombre) {
   el.querySelector(".ej-check").textContent=completados[kk]?"✓":"";
   guardarLocal();
   actualizarProgresoDia();
-
   if(completados[kk]){
     mostrarSaving();
-    apiGet({
-      action:"registrar",
-      dia:diaActual,
-      tipo:d.tipo,
-      bloque:bloqueNombre,
-      nombre:ej.n,
-      series:ej.s,
-      reps:ej.r,
-      peso:pesos[kk]||"",
-      notas:notas[kk]||""
-    }).then(function(r){
-      ocultarSaving();
-      if(r&&r.ok) mostrarToast("✓ Guardado en Sheets");
-      else mostrarToast("Error: "+(r&&r.msg?r.msg:"sin respuesta"),true);
-    });
+    apiGet({action:"registrar",dia:diaActual,tipo:d.tipo,bloque:bloqueNombre,nombre:ej.n,series:ej.s,reps:ej.r,peso:pesos[kk]||"",notas:notas[kk]||""})
+      .then(function(r){ ocultarSaving(); if(r&&r.ok) mostrarToast("✓ Guardado en Sheets"); else mostrarToast("Error al guardar",true); });
   } else {
-    apiGet({ action:"desregistrar", dia:diaActual, nombre:ej.n });
+    apiGet({action:"desregistrar",dia:diaActual,nombre:ej.n});
   }
 }
 
@@ -322,9 +349,9 @@ function debSync(kk){
     if(!completados[kk]) return;
     var parts=kk.split("-");
     var ej=PLAN[diaActual].bloques[parseInt(parts[1])].e[parseInt(parts[2])];
-    apiGet({ action:"actualizarPeso", dia:diaActual, nombre:ej.n, peso:pesos[kk]||"", notas:notas[kk]||"" })
+    apiGet({action:"actualizarPeso",dia:diaActual,nombre:ej.n,peso:pesos[kk]||"",notas:notas[kk]||""})
       .then(function(r){
-        if(r&&r.ok){ var el=document.getElementById("sy-"+kk); if(el){el.classList.add("show");setTimeout(function(){el.classList.remove("show");},2000);} }
+        if(r&&r.ok){var el=document.getElementById("sy-"+kk);if(el){el.classList.add("show");setTimeout(function(){el.classList.remove("show");},2000);}}
       });
   },1200);
 }
@@ -332,76 +359,60 @@ function debSync(kk){
 function toggleHist(kk,nombreEj){
   var popup=document.getElementById("hi-"+kk);
   if(!popup) return;
-  if(popup.classList.contains("show")){ popup.classList.remove("show"); return; }
+  if(popup.classList.contains("show")){popup.classList.remove("show");return;}
   popup.classList.add("show");
   popup.innerHTML='<span style="color:var(--texto)">Cargando...</span>';
-  apiGet({ action:"historial", nombre:nombreEj }).then(function(resp){
+  apiGet({action:"historial",nombre:nombreEj}).then(function(resp){
     var data=resp&&resp.data?resp.data:[];
-    if(!data.length){ popup.innerHTML='<span style="color:var(--texto)">Sin registros aún.</span>'; return; }
-    popup.innerHTML=data.map(function(h){ return '<div class="hist-item"><span>'+h.fecha+'</span><span>'+h.peso+' kg · '+h.volumen+'</span></div>'; }).join("");
+    if(!data.length){popup.innerHTML='<span style="color:var(--texto)">Sin registros aún.</span>';return;}
+    popup.innerHTML=data.map(function(h){return '<div class="hist-item"><span>'+h.fecha+'</span><span>'+h.peso+' kg · '+h.volumen+'</span></div>';}).join("");
   });
 }
 
-// ============================================================
-// PROGRESO
-// ============================================================
 function actualizarProgresoDia(){
   var d=PLAN[diaActual]; if(!d) return;
   var total=0,hechos=0;
-  d.bloques.forEach(function(b,bi){ b.e.forEach(function(e,ei){ total++; if(completados[k(diaActual,bi,ei)]) hechos++; }); });
+  d.bloques.forEach(function(b,bi){b.e.forEach(function(e,ei){total++;if(completados[k(diaActual,bi,ei)])hechos++;});});
   document.getElementById("p-ej").textContent=hechos+"/"+total;
   document.getElementById("b-ej").style.width=total>0?(hechos/total*100)+"%":"0%";
 }
 
-// ============================================================
-// IA
-// ============================================================
 async function obtenerConsejo(){
   var d=PLAN[diaActual];
-  var btn=document.getElementById("btn-ia"), box=document.getElementById("ia-box");
-  if(!d){ box.textContent="Hoy es día de descanso. ¡Disfruta con Olivia! 💛"; return; }
-  btn.disabled=true; btn.textContent="⏳ Pensando...";
-  box.className="ia-box ia-loading"; box.textContent="Generando consejo...";
-  var ejercicios=d.bloques.flatMap(function(b){ return b.e.map(function(e){ return e.n; }); }).join(", ");
+  var btn=document.getElementById("btn-ia"),box=document.getElementById("ia-box");
+  if(!d){box.textContent="Hoy es día de descanso. ¡Disfruta con Olivia! 💛";return;}
+  btn.disabled=true;btn.textContent="⏳ Pensando...";
+  box.className="ia-box ia-loading";box.textContent="Generando consejo...";
+  var ejercicios=d.bloques.flatMap(function(b){return b.e.map(function(e){return e.n;});}).join(", ");
   var prompt="Eres un entrenador personal experto. Samuel, 45 años, baja forma, meniscos rotos en ambas rodillas (sin dolor actual), hija de 3 años llamada Olivia. Objetivo: salud y longevidad para estar más tiempo con ella.\n\nHoy: "+d.subtitulo+". Ejercicios: "+ejercicios+".\n\nDa un consejo corto (3-4 frases), motivador y personalizado. "+(diaActual==="miercoles"?"Menciona los meniscos.":"")+" Termina recordándole a Olivia. Español, tono cálido y directo.";
-  try {
+  try{
     var resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:prompt}]})});
     var data=await resp.json();
     var texto=data.content&&data.content.find(function(b){return b.type==="text";});
-    box.className="ia-box"; box.textContent=texto?texto.text:"No se pudo generar el consejo.";
-  } catch(e){ box.className="ia-box"; box.textContent="Error de conexión."; }
-  btn.disabled=false; btn.textContent="✨ Generar consejo";
+    box.className="ia-box";box.textContent=texto?texto.text:"No se pudo generar el consejo.";
+  }catch(e){box.className="ia-box";box.textContent="Error de conexión.";}
+  btn.disabled=false;btn.textContent="✨ Generar consejo";
 }
 
-// ============================================================
-// EMAIL / COPIAR
-// ============================================================
 function generarTexto(){
   var d=PLAN[diaActual];
   if(!d) return "Hoy es día de descanso. ¡Recupérate bien!";
   var txt="ENTRENAMIENTO — SAMUEL FIT\n"+d.titulo+" · "+d.subtitulo+"\nDuración: "+d.duracion+"\n\n";
-  d.bloques.forEach(function(b){ txt+=b.n+"\n"; b.e.forEach(function(e){ txt+="  • "+e.n+" — "+e.s+" × "+e.r+(e.nota?" ("+e.nota+")":"")+"\n"; }); txt+="\n"; });
+  d.bloques.forEach(function(b){txt+=b.n+"\n";b.e.forEach(function(e){txt+="  • "+e.n+" — "+e.s+" × "+e.r+(e.nota?" ("+e.nota+")":"")+"\n";});txt+="\n";});
   txt+="\n💪 ¡A por ello, Samuel! Lo haces por Olivia. ❤️\n";
   return txt;
 }
-function copiarEntrenamiento(){ navigator.clipboard.writeText(generarTexto()).then(function(){ mostrarToast("✅ Copiado"); }); }
+function copiarEntrenamiento(){navigator.clipboard.writeText(generarTexto()).then(function(){mostrarToast("✅ Copiado");});}
 function enviarEmail(){
   var d=PLAN[diaActual];
   window.location.href="mailto:samueldavidgutierrez@gmail.com?subject="+encodeURIComponent("💪 Entrenamiento — "+(d?d.titulo:"Hoy"))+"&body="+encodeURIComponent(generarTexto());
 }
 
-// ============================================================
-// LOCAL STORAGE
-// ============================================================
-function guardarLocal(){ try{ localStorage.setItem("sf_c",JSON.stringify(completados)); localStorage.setItem("sf_p",JSON.stringify(pesos)); localStorage.setItem("sf_n",JSON.stringify(notas)); }catch(e){} }
-function cargarLocal(){ try{ var c=localStorage.getItem("sf_c"); if(c) completados=JSON.parse(c); var p=localStorage.getItem("sf_p"); if(p) pesos=JSON.parse(p); var n=localStorage.getItem("sf_n"); if(n) notas=JSON.parse(n); }catch(e){} }
-
-// ============================================================
-// UI
-// ============================================================
-function mostrarSaving(){ var b=document.getElementById("saving-bar"); b.style.width="60%"; b.style.opacity="1"; }
-function ocultarSaving(){ var b=document.getElementById("saving-bar"); b.style.width="100%"; setTimeout(function(){ b.style.opacity="0"; setTimeout(function(){ b.style.width="0"; b.style.opacity="1"; },500); },300); }
-function mostrarToast(msg,error){ var t=document.getElementById("toast"); t.textContent=msg; t.className="toast"+(error?" error":"")+" show"; setTimeout(function(){ t.className="toast"+(error?" error":""); },3000); }
+function guardarLocal(){try{localStorage.setItem("sf_c",JSON.stringify(completados));localStorage.setItem("sf_p",JSON.stringify(pesos));localStorage.setItem("sf_n",JSON.stringify(notas));}catch(e){}}
+function cargarLocal(){try{var c=localStorage.getItem("sf_c");if(c)completados=JSON.parse(c);var p=localStorage.getItem("sf_p");if(p)pesos=JSON.parse(p);var n=localStorage.getItem("sf_n");if(n)notas=JSON.parse(n);}catch(e){}}
+function mostrarSaving(){var b=document.getElementById("saving-bar");b.style.width="60%";b.style.opacity="1";}
+function ocultarSaving(){var b=document.getElementById("saving-bar");b.style.width="100%";setTimeout(function(){b.style.opacity="0";setTimeout(function(){b.style.width="0";b.style.opacity="1";},500);},300);}
+function mostrarToast(msg,error){var t=document.getElementById("toast");t.textContent=msg;t.className="toast"+(error?" error":"")+" show";setTimeout(function(){t.className="toast"+(error?" error":"");},3000);}
 </script>
 </body>
 </html>
