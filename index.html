@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Samuel Fit">
+<title>Samuel Fit</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --negro:#0a0a0a; --blanco:#f5f0e8; --naranja:#ff5722; --naranja2:#ff8c00;
+    --verde:#4caf50; --gris:#1a1a1a; --gris2:#2a2a2a; --gris3:#3a3a3a; --texto:#b0a89a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--negro); color:var(--blanco); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; padding-bottom:40px; }
+
+  .header { padding:env(safe-area-inset-top, 20px) 20px 16px; padding-top:max(env(safe-area-inset-top), 20px); border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:4px; background:linear-gradient(90deg,var(--naranja),var(--naranja2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .logo span { color:var(--blanco); -webkit-text-fill-color:var(--blanco); font-size:0.65rem; font-family:'DM Sans'; display:block; letter-spacing:3px; text-transform:uppercase; margin-top:-4px; font-weight:300; }
+  .sheet-link { font-size:0.72rem; color:var(--texto); text-decoration:none; border:1px solid #333; padding:6px 12px; border-radius:100px; }
+
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#222; border-bottom:1px solid #222; }
+  .stat { background:var(--negro); padding:14px 16px; }
+  .stat-label { font-size:0.58rem; letter-spacing:2px; text-transform:uppercase; color:var(--texto); margin-bottom:4px; }
+  .stat-value { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--naranja); }
+  .stat-sub { font-size:0.65rem; color:var(--texto); }
+
+  .semana-nav { display:flex; overflow-x:auto; border-bottom:1px solid #222; scrollbar-width:none; }
+  .semana-nav::-webkit-scrollbar { display:none; }
+  .dia-btn { padding:14px 16px; background:none; border:none; color:var(--texto); font-family:'DM Sans'; font-size:0.7rem; font-weight:500; letter-spacing:1px; text-transform:uppercase; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; flex-shrink:0; -webkit-appearance:none; }
+  .dia-btn.activo { color:var(--naranja); border-bottom-color:var(--naranja); }
+  .dia-btn.hoy::after { content:'•'; color:var(--naranja); margin-left:3px; }
+
+  .panel { padding:20px; }
+  .dia-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  .dia-titulo { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; letter-spacing:3px; line-height:1; }
+  .dia-subtitulo { font-size:0.68rem; color:var(--texto); letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+  .dia-tipo { padding:7px 14px; border-radius:6px; font-size:0.65rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  .tipo-fuerza { background:rgba(255,87,34,0.12); color:var(--naranja); border:1px solid rgba(255,87,34,0.25); }
+  .tipo-cardio  { background:rgba(76,175,80,0.12);  color:var(--verde);   border:1px solid rgba(76,175,80,0.25);  }
+
+  .bloque { margin-bottom:22px; }
+  .bloque-titulo { font-size:0.6rem; letter-spacing:3px; text-transform:uppercase; color:var(--naranja); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .bloque-titulo::after { content:''; flex:1; height:1px; background:var(--gris3); }
+
+  .ejercicio { display:grid; grid-template-columns:1fr auto auto; align-items:start; gap:10px; padding:14px; background:var(--gris); border-radius:10px; margin-bottom:6px; border:1px solid transparent; transition:border-color 0.2s; }
+  .ejercicio.completado { border-color:rgba(76,175,80,0.4); background:rgba(76,175,80,0.06); }
+  .ej-nombre { font-weight:500; font-size:0.88rem; cursor:pointer; }
+  .ejercicio.completado .ej-nombre { text-decoration:line-through; color:var(--texto); }
+  .ej-nota { font-size:0.7rem; color:var(--texto); margin-top:2px; }
+  .ej-series-val { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--naranja); line-height:1; text-align:center; }
+  .ej-series-lab { font-size:0.56rem; letter-spacing:1px; text-transform:uppercase; color:var(--texto); text-align:center; }
+  .ej-check { width:26px; height:26px; border-radius:50%; border:2px solid #444; display:flex; align-items:center; justify-content:center; font-size:0.85rem; cursor:pointer; flex-shrink:0; transition:all 0.2s; margin-top:2px; }
+  .ejercicio.completado .ej-check { background:var(--verde); border-color:var(--verde); }
+
+  .peso-row { display:flex; align-items:center; gap:6px; margin-top:8px; }
+  .peso-input { background:var(--negro); border:1px solid #444; border-radius:6px; color:var(--blanco); font-family:'DM Sans'; font-size:0.78rem; padding:5px 8px; width:72px; text-align:center; -webkit-appearance:none; }
+  .peso-input:focus { outline:none; border-color:var(--naranja); }
+  .notas-input { background:var(--negro); border:1px solid #444; border-radius:6px; color:var(--blanco); font-family:'DM Sans'; font-size:0.75rem; padding:5px 8px; flex:1; -webkit-appearance:none; }
+  .notas-input:focus { outline:none; border-color:var(--naranja); }
+  .sync-ok { font-size:0.62rem; color:var(--verde); opacity:0; transition:opacity 0.3s; white-space:nowrap; }
+  .sync-ok.show { opacity:1; }
+
+  .hist-btn { background:none; border:none; color:#666; font-size:0.68rem; cursor:pointer; padding:3px 6px; border-radius:4px; margin-top:4px; }
+  .hist-btn:active { color:var(--naranja); }
+  .hist-popup { display:none; margin-top:6px; background:var(--negro); border:1px solid #333; border-radius:8px; padding:10px; font-size:0.73rem; }
+  .hist-popup.show { display:block; }
+  .hist-item { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #222; color:var(--texto); }
+  .hist-item:last-child { border-bottom:none; }
+  .hist-item span:last-child { color:var(--naranja); font-weight:600; }
+
+  .lateral { padding:0 20px 20px; display:flex; flex-direction:column; gap:16px; }
+  .card { background:var(--gris); border-radius:12px; padding:18px; border:1px solid #2a2a2a; }
+  .card-titulo { font-size:0.6rem; letter-spacing:3px; text-transform:uppercase; color:var(--texto); margin-bottom:12px; }
+
+  .prog-wrap { margin-bottom:10px; }
+  .prog-label { display:flex; justify-content:space-between; font-size:0.76rem; margin-bottom:5px; }
+  .prog-label span:last-child { color:var(--naranja); font-weight:600; }
+  .prog-bar { height:5px; background:#333; border-radius:100px; overflow:hidden; }
+  .prog-fill { height:100%; background:linear-gradient(90deg,var(--naranja),var(--naranja2)); border-radius:100px; transition:width 0.5s; }
+
+  .ia-box { background:var(--negro); border-radius:8px; padding:12px; font-size:0.82rem; line-height:1.6; min-height:60px; border:1px solid #2a2a2a; color:var(--blanco); }
+  .ia-loading { color:var(--texto); font-style:italic; }
+  .btn-ia { width:100%; margin-top:8px; padding:10px; background:rgba(255,87,34,0.1); border:1px solid rgba(255,87,34,0.3); border-radius:8px; color:var(--naranja); font-family:'DM Sans'; font-size:0.8rem; font-weight:600; cursor:pointer; -webkit-appearance:none; }
+
+  .btn-primary { width:100%; padding:14px; background:linear-gradient(135deg,var(--naranja),var(--naranja2)); border:none; border-radius:10px; color:#fff; font-family:'Bebas Neue'; font-size:1rem; letter-spacing:3px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; -webkit-appearance:none; }
+  .btn-secondary { width:100%; margin-top:8px; padding:12px; background:transparent; border:1px solid #444; border-radius:10px; color:var(--blanco); font-family:'DM Sans'; font-size:0.78rem; cursor:pointer; -webkit-appearance:none; }
+
+  .aviso { background:rgba(255,87,34,0.05); border:1px solid rgba(255,87,34,0.15); border-radius:10px; padding:14px; font-size:0.78rem; line-height:1.6; }
+
+  .saving-bar { height:3px; background:linear-gradient(90deg,var(--naranja),var(--naranja2)); position:fixed; top:0; left:0; width:0; transition:width 0.3s,opacity 0.5s; z-index:999; }
+
+  .toast { position:fixed; bottom:max(24px, env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%) translateY(100px); background:var(--verde); color:#fff; padding:12px 24px; border-radius:100px; font-size:0.82rem; font-weight:600; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index:1000; white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast.error { background:#e53935; }
+</style>
+</head>
+<body>
+
+<div class="saving-bar" id="saving-bar"></div>
+
+<div class="header">
+  <div class="logo">Samuel Fit <span>Plan de Entrenamiento · 2025</span></div>
+  <a class="sheet-link" id="sheet-link" href="#" target="_blank">📊 Sheets</a>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-label">Sesiones semana</div><div class="stat-value" id="stat-ses">—</div><div class="stat-sub">de 5 posibles</div></div>
+  <div class="stat"><div class="stat-label">Ejercicios reg.</div><div class="stat-value" id="stat-ej">—</div><div class="stat-sub">esta semana</div></div>
+  <div class="stat"><div class="stat-label">Hoy</div><div class="stat-value" id="stat-tipo">—</div><div class="stat-sub" id="stat-dur">—</div></div>
+</div>
+
+<nav class="semana-nav" id="nav"></nav>
+
+<div class="panel" id="panel"></div>
+
+<div class="lateral">
+  <div class="card">
+    <div class="card-titulo">📊 Progreso</div>
+    <div class="prog-wrap">
+      <div class="prog-label"><span>Sesiones</span><span id="p-ses">0/5</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="b-ses" style="width:0%"></div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-label"><span>Ejercicios hoy</span><span id="p-ej">0/0</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="b-ej" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">🤖 Consejo IA del día</div>
+    <div class="ia-box ia-loading" id="ia-box">Pulsa para obtener un consejo personalizado...</div>
+    <button class="btn-ia" id="btn-ia" onclick="obtenerConsejo()">✨ Generar consejo</button>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">📧 Email del entrenamiento</div>
+    <button class="btn-primary" onclick="enviarEmail()">📨 Enviar a mi email</button>
+    <button class="btn-secondary" onclick="copiarEntrenamiento()">📋 Copiar al portapapeles</button>
+  </div>
+
+  <div class="aviso">
+    <strong style="color:var(--naranja)">⚠️ Meniscos:</strong> Sin impacto ni saltos. Sentadillas máx 90°.<br><br>
+    <strong style="color:var(--naranja)">Progresión:</strong> 3 semanas con peso bajo. Técnica primero.<br><br>
+    <strong style="color:var(--naranja)">Hidratación:</strong> Agua siempre desde que te levantas.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN — pon aquí tu URL de Apps Script
+// ============================================================
+var API_URL = "https://script.google.com/macros/s/AKfycbwP_OqnxLgfW6ENwBBZSwXCtVjimdY9f27du0lujVu60S2CT2qscauiVJM0DA8Udh8/exec";
+
+// ============================================================
+// PLAN
+// ============================================================
+var PLAN = {
+  lunes:{ titulo:"LUNES", subtitulo:"Fuerza A — Tren Superior + Core", tipo:"gimnasio", emoji:"🏋️", duracion:"55 min",
+    bloques:[
+      { n:"🔥 Calentamiento (8 min)", e:[
+        {n:"Movilidad articular (cuello, hombros, caderas, rodillas)",s:"—",r:"2 min"},
+        {n:"Marcha en el sitio + brazos",s:"—",r:"3 min"},
+        {n:"Flexión de cadera + apertura torácica",s:"2",r:"10 rep"}]},
+      { n:"💪 Bloque Principal (35 min)", e:[
+        {n:"Press banca en máquina o con mancuernas",s:"3",r:"12 rep",nota:"Pecho — peso cómodo al inicio"},
+        {n:"Remo con mancuerna apoyado (un brazo)",s:"3",r:"12 rep",nota:"Espalda recta siempre"},
+        {n:"Press hombro con mancuernas (sentado)",s:"3",r:"10 rep",nota:"Rango completo"},
+        {n:"Curl de bíceps alterno",s:"3",r:"12 rep",nota:"Sin balancear el tronco"},
+        {n:"Extensión de tríceps en polea",s:"3",r:"12 rep",nota:"Codos pegados al cuerpo"}]},
+      { n:"🧱 Core (10 min)", e:[
+        {n:"Plancha frontal",s:"3",r:"30 seg"},
+        {n:"Dead bug (brazos y piernas opuestos)",s:"3",r:"10 rep",nota:"Lumbar pegada al suelo"},
+        {n:"Plancha lateral (cada lado)",s:"2",r:"20 seg"}]},
+      { n:"🧘 Vuelta a la calma (5 min)", e:[
+        {n:"Estiramiento pecho + hombros en pared",s:"—",r:"30 seg"},
+        {n:"Estiramiento espalda (gato-vaca)",s:"—",r:"1 min"},
+        {n:"Respiración profunda (inhala 4s, exhala 6s)",s:"—",r:"1 min"}]}
+    ]},
+  martes:{ titulo:"MARTES", subtitulo:"Agilidad y Movilidad en el Parque", tipo:"parque", emoji:"🌳", duracion:"45 min",
+    bloques:[
+      { n:"🌳 Rutina de Parque", e:[
+        {n:"Caminar rápido o marcha nórdica",s:"—",r:"15 min",nota:"Ritmo en el que puedas hablar justo"},
+        {n:"Sentadilla en banco (profundidad controlada)",s:"3",r:"15 rep",nota:"Rodillas bien — no sobrepasar pies"},
+        {n:"Fondos en banco (tríceps)",s:"3",r:"10 rep"},
+        {n:"Estocadas laterales (sin saltar)",s:"3",r:"10/lado",nota:"Carga en glúteo, no en rodilla"},
+        {n:"Equilibrio monopodal (cigüeña)",s:"3",r:"20 seg/pie",nota:"Estabilizadores de rodilla"},
+        {n:"Movilidad de cadera: círculos y apertura",s:"2",r:"1 min"},
+        {n:"Estiramientos finales",s:"—",r:"5 min"}]}
+    ]},
+  miercoles:{ titulo:"MIÉRCOLES", subtitulo:"Fuerza B — Tren Inferior + Core", tipo:"gimnasio", emoji:"🦵", duracion:"55 min",
+    bloques:[
+      { n:"🔥 Calentamiento (8 min)", e:[
+        {n:"Movilidad de cadera y tobillo",s:"—",r:"3 min",nota:"Esencial antes de piernas"},
+        {n:"Puente de glúteos en suelo",s:"2",r:"15 rep"},
+        {n:"Rotaciones de rodilla (sentado)",s:"2",r:"10 rep",nota:"Solo hasta donde no moleste"}]},
+      { n:"🦵 Piernas Adaptadas (35 min)", e:[
+        {n:"Prensa de piernas (máquina)",s:"4",r:"15 rep",nota:"Profundidad controlada — ideal con meniscos"},
+        {n:"Extensión de cuádriceps (máquina)",s:"3",r:"12 rep",nota:"Rango parcial si hay molestia"},
+        {n:"Curl femoral tumbado (máquina)",s:"3",r:"12 rep",nota:"Fundamental para estabilizar rodilla"},
+        {n:"Hip thrust con mancuerna",s:"3",r:"15 rep",nota:"Sin presión en rodillas"},
+        {n:"Pantorrilla de pie (máquina o escalón)",s:"3",r:"20 rep",nota:"Sin rebote"}]},
+      { n:"🧱 Core + Estabilidad (10 min)", e:[
+        {n:"Bird dog",s:"3",r:"10/lado"},
+        {n:"Crunch abdominal controlado",s:"3",r:"15 rep",nota:"Sin tirar del cuello"},
+        {n:"Plancha con elevación de brazo alterna",s:"2",r:"8/lado"}]},
+      { n:"🧘 Vuelta a la calma (5 min)", e:[
+        {n:"Estiramiento cuádriceps de pie",s:"—",r:"30 seg/lado"},
+        {n:"Estiramiento isquiotibial sentado",s:"—",r:"30 seg/lado"},
+        {n:"Estiramiento glúteo (figura 4)",s:"—",r:"30 seg/lado",nota:"Tumbado, suave"}]}
+    ]},
+  jueves:{ titulo:"JUEVES", subtitulo:"Cardio Suave y Agilidad en el Parque", tipo:"parque", emoji:"🌳", duracion:"45 min",
+    bloques:[
+      { n:"🌳 Sesión de Parque", e:[
+        {n:"Caminata rápida o bicicleta",s:"—",r:"20 min",nota:"Zona 2 — ritmo sostenible"},
+        {n:"Flexiones en suelo o inclinadas en banco",s:"3",r:"10-15 rep"},
+        {n:"Sentadilla con pausa en banco",s:"3",r:"12 rep",nota:"Control total — sin rebote"},
+        {n:"Zancadas hacia adelante (sin salto)",s:"2",r:"8/pierna",nota:"Rodilla no pasa el pie"},
+        {n:"Coordinación: paso lateral + cruce",s:"3",r:"20 seg",nota:"Agilidad suave"},
+        {n:"Estiramiento completo",s:"—",r:"5 min"}]}
+    ]},
+  viernes:{ titulo:"VIERNES", subtitulo:"Full Body — Integración y Potencia", tipo:"gimnasio", emoji:"⚡", duracion:"55 min",
+    bloques:[
+      { n:"🔥 Calentamiento (8 min)", e:[
+        {n:"Movilidad completa de cabeza a pies",s:"—",r:"5 min"},
+        {n:"Remo con banda elástica (activar espalda)",s:"2",r:"15 rep"}]},
+      { n:"⚡ Full Body Circuito (35 min)", e:[
+        {n:"Sentadilla goblet con mancuerna",s:"3",r:"12 rep",nota:"Peso en pecho — postura perfecta"},
+        {n:"Remo con barra o en máquina",s:"3",r:"12 rep"},
+        {n:"Press inclinado con mancuernas",s:"3",r:"12 rep"},
+        {n:"Romanian deadlift con mancuerna",s:"3",r:"12 rep",nota:"Bisagra de cadera pura"},
+        {n:"Remo invertido en barra baja o TRX",s:"3",r:"10 rep"},
+        {n:"Press militar con mancuernas de pie",s:"3",r:"10 rep",nota:"Core activado, no arquear"}]},
+      { n:"🎯 Finisher Core (7 min)", e:[
+        {n:"Plancha",s:"3",r:"45 seg"},
+        {n:"Russian twist con peso ligero",s:"2",r:"20 rep"},
+        {n:"Elevación de piernas tumbado",s:"2",r:"12 rep",nota:"Lumbar pegada al suelo"}]},
+      { n:"🧘 Vuelta a la calma (5 min)", e:[
+        {n:"Estiramiento completo — te lo has ganado 💪",s:"—",r:"5 min"}]}
+    ]},
+  sabado:null, domingo:null
+};
+
+// ============================================================
+// ESTADO
+// ============================================================
+var diaActual = "lunes";
+var completados = {}, pesos = {}, notas = {}, syncTimers = {};
+var resumen = { sesiones:0, ejercicios:0, dias:[] };
+
+function k(dia,bi,ei){ return dia+"-"+bi+"-"+ei; }
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = function() {
+  cargarLocal();
+  var dias = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+  diaActual = dias[new Date().getDay()];
+  renderNav();
+  renderDia();
+  cargarResumen();
+  cargarSheetUrl();
+};
+
+// ============================================================
+// API
+// ============================================================
+function api(params, esPost, body) {
+  if (API_URL === "https://script.google.com/macros/s/AKfycbwP_OqnxLgfW6ENwBBZSwXCtVjimdY9f27du0lujVu60S2CT2qscauiVJM0DA8Udh8/exec") return Promise.resolve({ ok: false, msg: "Configura API_URL" });
+  if (esPost) {
+    return fetch(API_URL, { method:"POST", body: JSON.stringify(body) }).then(function(r){ return r.json(); }).catch(function(){ return { ok:false }; });
+  } else {
+    var url = API_URL + "?" + Object.keys(params).map(function(k){ return k+"="+encodeURIComponent(params[k]); }).join("&");
+    return fetch(url).then(function(r){ return r.json(); }).catch(function(){ return {}; });
+  }
+}
+
+function cargarResumen() {
+  api({action:"resumen"}).then(function(d) {
+    if (d && typeof d.sesiones !== "undefined") {
+      resumen = d;
+      document.getElementById("stat-ses").textContent = d.sesiones;
+      document.getElementById("stat-ej").textContent = d.ejercicios;
+      document.getElementById("p-ses").textContent = d.sesiones+"/5";
+      document.getElementById("b-ses").style.width = (d.sesiones/5*100)+"%";
+    }
+  });
+}
+
+function cargarSheetUrl() {
+  api({action:"sheetUrl"}).then(function(d) {
+    if (d && d.url) document.getElementById("sheet-link").href = d.url;
+  });
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function renderNav() {
+  var labels = {lunes:"LUN·Fuerza A",martes:"MAR·Parque",miercoles:"MIÉ·Fuerza B",jueves:"JUE·Parque",viernes:"VIE·Full Body",sabado:"SÁB·Desc",domingo:"DOM·Desc"};
+  var orden = ["lunes","martes","miercoles","jueves","viernes","sabado","domingo"];
+  var dias = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+  var hoy = dias[new Date().getDay()];
+  document.getElementById("nav").innerHTML = orden.map(function(d) {
+    return '<button class="dia-btn'+(PLAN[d]?"":" descanso")+(d===diaActual?" activo":"")+(d===hoy?" hoy":"")+'" data-dia="'+d+'" onclick="cambiarDia(\''+d+'\')">'+labels[d]+'</button>';
+  }).join("");
+}
+
+function cambiarDia(dia) {
+  diaActual = dia;
+  document.querySelectorAll(".dia-btn").forEach(function(b){ b.classList.toggle("activo", b.dataset.dia===dia); });
+  renderDia();
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderDia() {
+  var d = PLAN[diaActual];
+  var tipoMap = {gimnasio:"🏋️ GYM", parque:"🌳 PARQUE"};
+  document.getElementById("stat-tipo").textContent = d ? tipoMap[d.tipo] : "😴 DESC";
+  document.getElementById("stat-dur").textContent = d ? d.duracion : "Descanso";
+
+  if (!d) {
+    document.getElementById("panel").innerHTML = '<div style="text-align:center;padding:50px 20px;"><div style="font-size:3.5rem;margin-bottom:12px;">😴</div><div style="font-family:\'Bebas Neue\';font-size:2rem;letter-spacing:3px;color:var(--naranja);">DÍA DE DESCANSO</div><div style="color:var(--texto);margin-top:8px;font-size:0.85rem;line-height:1.6;">El cuerpo crece cuando descansa.<br>Disfruta el tiempo con Olivia. ❤️</div></div>';
+    return;
+  }
+
+  var tc = d.tipo==="gimnasio"?"tipo-fuerza":"tipo-cardio";
+  var tl = d.tipo==="gimnasio"?"🏋️ Basic-Fit":"🌳 Parque";
+  var html = '<div class="dia-header"><div><div class="dia-titulo">'+d.titulo+'</div><div class="dia-subtitulo">'+d.subtitulo+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;"><div class="dia-tipo '+tc+'">'+tl+'</div><div style="font-size:0.68rem;color:var(--texto)">⏱ '+d.duracion+'</div></div></div>';
+
+  d.bloques.forEach(function(bloque, bi) {
+    html += '<div class="bloque"><div class="bloque-titulo">'+bloque.n+'</div>';
+    bloque.e.forEach(function(ej, ei) {
+      var kk = k(diaActual, bi, ei);
+      var hecho = completados[kk];
+      var pv = pesos[kk]||"", nv = notas[kk]||"";
+      var conPeso = ["3","2","4"].includes(ej.s);
+      html += '<div class="ejercicio'+(hecho?" completado":"")+'" id="ej-'+kk+'">'
+        + '<div>'
+        + '<div class="ej-nombre" onclick="toggle(\''+kk+'\',\''+bloque.n.replace(/'/g,"\\'").replace(/"/g,"&quot;")+'\')">'+ej.n+'</div>'
+        + (ej.nota?'<div class="ej-nota">'+ej.nota+'</div>':"")
+        + (conPeso?'<div class="peso-row" onclick="event.stopPropagation()">'
+          + '<input class="peso-input" type="text" inputmode="decimal" placeholder="kg" value="'+pv+'" onchange="cambioPeso(\''+kk+'\',this.value)" oninput="debSync(\''+kk+'\')">'
+          + '<input class="notas-input" type="text" placeholder="notas..." value="'+nv+'" onchange="cambioNotas(\''+kk+'\',this.value)" oninput="debSync(\''+kk+'\')">'
+          + '<span class="sync-ok" id="sy-'+kk+'">✓</span>'
+          + '</div>'
+          + '<div onclick="event.stopPropagation()"><button class="hist-btn" onclick="toggleHist(\''+kk+'\',\''+ej.n.replace(/'/g,"\\'")+'\')" >📈 historial</button>'
+          + '<div class="hist-popup" id="hi-'+kk+'"><span style="color:var(--texto)">Cargando...</span></div></div>'
+          :"")
+        + '</div>'
+        + '<div><div class="ej-series-val">'+ej.s+'</div><div class="ej-series-lab">'+ej.r+'</div></div>'
+        + '<div class="ej-check" onclick="toggle(\''+kk+'\',\''+bloque.n.replace(/'/g,"\\'").replace(/"/g,"&quot;")+'\')">'+( hecho?"✓":"")+'</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  });
+
+  document.getElementById("panel").innerHTML = html;
+  actualizarProgresoDia();
+}
+
+// ============================================================
+// TOGGLE
+// ============================================================
+function toggle(kk, bloqueNombre) {
+  var d = PLAN[diaActual];
+  var parts = kk.split("-");
+  var bi = parseInt(parts[1]), ei = parseInt(parts[2]);
+  var ej = d.bloques[bi].e[ei];
+
+  completados[kk] = !completados[kk];
+  var el = document.getElementById("ej-"+kk);
+  if (!el) return;
+  el.classList.toggle("completado", completados[kk]);
+  el.querySelector(".ej-check").textContent = completados[kk] ? "✓" : "";
+  guardarLocal();
+  actualizarProgresoDia();
+
+  if (completados[kk]) {
+    mostrarSaving();
+    api({}, true, { action:"registrar", dia:diaActual, tipo:d.tipo, bloque:bloqueNombre, nombre:ej.n, series:ej.s, reps:ej.r, peso:pesos[kk]||"", notas:notas[kk]||"" })
+      .then(function(r){ ocultarSaving(); if(r&&r.ok) mostrarToast("✓ Guardado en Sheets"); });
+  } else {
+    api({}, true, { action:"desregistrar", dia:diaActual, nombre:ej.n }).then(function(){ });
+  }
+}
+
+function cambioPeso(kk, v) { pesos[kk]=v; guardarLocal(); }
+function cambioNotas(kk, v) { notas[kk]=v; guardarLocal(); }
+
+function debSync(kk) {
+  clearTimeout(syncTimers[kk]);
+  syncTimers[kk] = setTimeout(function() {
+    if (!completados[kk]) return;
+    var parts = kk.split("-");
+    var ej = PLAN[diaActual].bloques[parseInt(parts[1])].e[parseInt(parts[2])];
+    api({}, true, { action:"actualizarPeso", dia:diaActual, nombre:ej.n, peso:pesos[kk]||"", notas:notas[kk]||"" })
+      .then(function(r) {
+        if (r&&r.ok) { var el=document.getElementById("sy-"+kk); if(el){el.classList.add("show");setTimeout(function(){el.classList.remove("show");},2000);} }
+      });
+  }, 1200);
+}
+
+function toggleHist(kk, nombreEj) {
+  var popup = document.getElementById("hi-"+kk);
+  if (!popup) return;
+  if (popup.classList.contains("show")) { popup.classList.remove("show"); return; }
+  popup.classList.add("show");
+  popup.innerHTML = '<span style="color:var(--texto)">Cargando...</span>';
+  api({ action:"historial", nombre:nombreEj }).then(function(resp) {
+    var data = resp && resp.data ? resp.data : [];
+    if (!data.length) { popup.innerHTML='<span style="color:var(--texto)">Sin registros aún.</span>'; return; }
+    popup.innerHTML = data.map(function(h){ return '<div class="hist-item"><span>'+h.fecha+'</span><span>'+h.peso+' kg · '+h.volumen+'</span></div>'; }).join("");
+  });
+}
+
+// ============================================================
+// PROGRESO
+// ============================================================
+function actualizarProgresoDia() {
+  var d = PLAN[diaActual]; if(!d) return;
+  var total=0, hechos=0;
+  d.bloques.forEach(function(b,bi){ b.e.forEach(function(e,ei){ total++; if(completados[k(diaActual,bi,ei)]) hechos++; }); });
+  document.getElementById("p-ej").textContent = hechos+"/"+total;
+  document.getElementById("b-ej").style.width = total>0?(hechos/total*100)+"%":"0%";
+}
+
+// ============================================================
+// IA
+// ============================================================
+async function obtenerConsejo() {
+  var d = PLAN[diaActual];
+  var btn = document.getElementById("btn-ia");
+  var box = document.getElementById("ia-box");
+  if (!d) { box.textContent="Hoy es día de descanso. ¡Disfruta con Olivia! 💛"; return; }
+  btn.disabled=true; btn.textContent="⏳ Pensando...";
+  box.className="ia-box ia-loading"; box.textContent="Generando consejo...";
+  var ejercicios = d.bloques.flatMap(function(b){ return b.e.map(function(e){ return e.n; }); }).join(", ");
+  var prompt = "Eres un entrenador personal experto. Samuel, 45 años, baja forma, meniscos rotos en ambas rodillas (sin dolor actual), hija de 3 años llamada Olivia. Objetivo: salud y longevidad para estar más tiempo con ella.\n\nHoy: "+d.subtitulo+". Ejercicios: "+ejercicios+".\n\nDa un consejo corto (3-4 frases), motivador y personalizado. "+(diaActual==="miercoles"?"Menciona los meniscos.":"")+" Termina recordándole a Olivia. Español, tono cálido y directo.";
+  try {
+    var resp = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:prompt}]})});
+    var data = await resp.json();
+    var texto = data.content && data.content.find(function(b){return b.type==="text";});
+    box.className="ia-box"; box.textContent = texto ? texto.text : "No se pudo generar el consejo.";
+  } catch(e) { box.className="ia-box"; box.textContent="Error de conexión."; }
+  btn.disabled=false; btn.textContent="✨ Generar consejo";
+}
+
+// ============================================================
+// EMAIL / COPIAR
+// ============================================================
+function generarTexto() {
+  var d = PLAN[diaActual];
+  if (!d) return "Hoy es día de descanso. ¡Recupérate bien!";
+  var txt = "ENTRENAMIENTO — SAMUEL FIT\n"+d.titulo+" · "+d.subtitulo+"\nDuración: "+d.duracion+"\n\n";
+  d.bloques.forEach(function(b){ txt+=b.n+"\n"; b.e.forEach(function(e){ txt+="  • "+e.n+" — "+e.s+" × "+e.r+(e.nota?" ("+e.nota+")":"")+"\n"; }); txt+="\n"; });
+  txt+="\n💪 ¡A por ello, Samuel! Lo haces por Olivia. ❤️\n";
+  return txt;
+}
+function copiarEntrenamiento() { navigator.clipboard.writeText(generarTexto()).then(function(){ mostrarToast("✅ Copiado"); }); }
+function enviarEmail() {
+  var d = PLAN[diaActual];
+  window.location.href="mailto:samueldavidgutierrez@gmail.com?subject="+encodeURIComponent("💪 Entrenamiento — "+(d?d.titulo:"Hoy"))+"&body="+encodeURIComponent(generarTexto());
+}
+
+// ============================================================
+// LOCAL STORAGE
+// ============================================================
+function guardarLocal() { try{ localStorage.setItem("sf_c",JSON.stringify(completados)); localStorage.setItem("sf_p",JSON.stringify(pesos)); localStorage.setItem("sf_n",JSON.stringify(notas)); }catch(e){} }
+function cargarLocal() { try{ var c=localStorage.getItem("sf_c"); if(c) completados=JSON.parse(c); var p=localStorage.getItem("sf_p"); if(p) pesos=JSON.parse(p); var n=localStorage.getItem("sf_n"); if(n) notas=JSON.parse(n); }catch(e){} }
+
+// ============================================================
+// UI
+// ============================================================
+function mostrarSaving() { var b=document.getElementById("saving-bar"); b.style.width="60%"; b.style.opacity="1"; }
+function ocultarSaving() { var b=document.getElementById("saving-bar"); b.style.width="100%"; setTimeout(function(){ b.style.opacity="0"; setTimeout(function(){ b.style.width="0"; b.style.opacity="1"; },500); },300); }
+function mostrarToast(msg,error) { var t=document.getElementById("toast"); t.textContent=msg; t.className="toast"+(error?" error":"")+" show"; setTimeout(function(){ t.className="toast"+(error?" error":""); },3000); }
+</script>
+</body>
+</html>
