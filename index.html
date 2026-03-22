@@ -59,9 +59,10 @@
 
 
 
+  .ej-foto-cargando { color:var(--texto); font-size:0.72rem; padding:8px; text-align:center; grid-column:1/-1; }
   .ej-fotos { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
   .ej-foto-wrap { text-align:center; }
-  .ej-foto { width:100%; border-radius:8px; aspect-ratio:4/3; object-fit:cover; background:#111; display:block; }
+  .ej-foto { width:100%; border-radius:8px; aspect-ratio:4/3; object-fit:contain; background:#ffffff; display:block; padding:6px; }
   .ej-foto-lbl { font-size:0.58rem; color:var(--texto); margin-top:3px; letter-spacing:1px; text-transform:uppercase; }
 
   .yt-btn { background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.2); color:#ff4444; font-size:0.68rem; cursor:pointer; padding:3px 8px; border-radius:4px; font-family:'DM Sans'; text-decoration:none; display:inline-block; }
@@ -146,37 +147,37 @@
 
 <script>
 var IMGS = {
-  "Press banca en máquina o con mancuernas": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/1.jpg"],
-  "Remo con mancuerna apoyado (un brazo)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One_Arm_Row/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One_Arm_Row/1.jpg"],
-  "Press hombro con mancuernas (sentado)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Seated_Shoulder_Press/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Seated_Shoulder_Press/1.jpg"],
-  "Curl de bíceps alterno": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Alternate_Bicep_Curl/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Alternate_Bicep_Curl/1.jpg"],
-  "Extensión de tríceps en polea": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Pushdown/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Pushdown/1.jpg"],
-  "Plancha frontal": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/1.jpg"],
-  "Dead bug (brazos y piernas opuestos)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dead_Bug/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dead_Bug/1.jpg"],
-  "Plancha lateral (cada lado)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Plank/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Plank/1.jpg"],
-  "Prensa de piernas (máquina)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/1.jpg"],
-  "Extensión de cuádriceps (máquina)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extension/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extension/1.jpg"],
-  "Curl femoral tumbado (máquina)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curl/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curl/1.jpg"],
-  "Hip thrust con mancuerna": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/1.jpg"],
-  "Pantorrilla de pie (máquina o escalón)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raise/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raise/1.jpg"],
-  "Puente de glúteos en suelo": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Glute_Bridge/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Glute_Bridge/1.jpg"],
-  "Bird dog": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bird_Dog/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bird_Dog/1.jpg"],
-  "Crunch abdominal controlado": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunch/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunch/1.jpg"],
-  "Plancha con elevación de brazo alterna": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/1.jpg"],
-  "Sentadilla goblet con mancuerna": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Goblet_Squat/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Goblet_Squat/1.jpg"],
-  "Remo con barra o en máquina": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bent_Over_Row/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bent_Over_Row/1.jpg"],
-  "Press inclinado con mancuernas": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Incline_Bench_Press/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Incline_Bench_Press/1.jpg"],
-  "Romanian deadlift con mancuerna": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Romanian_Deadlift/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Romanian_Deadlift/1.jpg"],
-  "Remo invertido en barra baja o TRX": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Inverted_Row/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Inverted_Row/1.jpg"],
-  "Press militar con mancuernas de pie": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Standing_Shoulder_Press/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Standing_Shoulder_Press/1.jpg"],
-  "Russian twist con peso ligero": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Russian_Twist/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Russian_Twist/1.jpg"],
-  "Elevación de piernas tumbado": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Raise/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Raise/1.jpg"],
-  "Fondos en banco (tríceps)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Dip/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Dip/1.jpg"],
-  "Estocadas laterales (sin saltar)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Side_Lunge/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Side_Lunge/1.jpg"],
-  "Zancadas hacia adelante (sin salto)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunge/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunge/1.jpg"],
-  "Flexiones en suelo o inclinadas en banco": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Push_Up/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Push_Up/1.jpg"],
-  "Sentadilla en banco (profundidad controlada)": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Squat/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Squat/1.jpg"],
-  "Sentadilla con pausa en banco": ["https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Squat/0.jpg", "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Squat/1.jpg"],
+  "Press banca en máquina o con mancuernas": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/press-banca.gif",
+  "Remo con mancuerna apoyado (un brazo)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/remo-mancuerna.gif",
+  "Press hombro con mancuernas (sentado)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/press-hombro.gif",
+  "Curl de bíceps alterno": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/curl-biceps.gif",
+  "Extensión de tríceps en polea": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/triceps-polea.gif",
+  "Plancha frontal": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/plancha.gif",
+  "Dead bug (brazos y piernas opuestos)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/dead-bug.gif",
+  "Plancha lateral (cada lado)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/plancha-lateral.gif",
+  "Plancha con elevación de brazo alterna": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/plancha.gif",
+  "Prensa de piernas (máquina)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/prensa-piernas.gif",
+  "Extensión de cuádriceps (máquina)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/extension-cuadriceps.gif",
+  "Curl femoral tumbado (máquina)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/curl-femoral.gif",
+  "Hip thrust con mancuerna": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/hip-thrust.gif",
+  "Pantorrilla de pie (máquina o escalón)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/pantorrilla.gif",
+  "Puente de glúteos en suelo": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/puente-gluteos.gif",
+  "Bird dog": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/bird-dog.gif",
+  "Crunch abdominal controlado": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/crunch.gif",
+  "Sentadilla goblet con mancuerna": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/goblet-squat.gif",
+  "Remo con barra o en máquina": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/remo-barra.gif",
+  "Press inclinado con mancuernas": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/press-inclinado.gif",
+  "Romanian deadlift con mancuerna": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/romanian-deadlift.gif",
+  "Remo invertido en barra baja o TRX": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/remo-invertido.gif",
+  "Press militar con mancuernas de pie": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/press-militar.gif",
+  "Russian twist con peso ligero": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/russian-twist.gif",
+  "Elevación de piernas tumbado": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/elevacion-piernas.gif",
+  "Fondos en banco (tríceps)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/fondos-banco.gif",
+  "Estocadas laterales (sin saltar)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/estocadas.gif",
+  "Zancadas hacia adelante (sin salto)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/zancadas.gif",
+  "Flexiones en suelo o inclinadas en banco": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/flexiones.gif",
+  "Sentadilla en banco (profundidad controlada)": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/sentadilla.gif",
+  "Sentadilla con pausa en banco": "https://animacionesinfantilesmusicales.com/wp-content/uploads/ejercicios/sentadilla.gif",
 };
 
 var API = "https://script.google.com/macros/s/AKfycbwP_OqnxLgfW6ENwBBZSwXCtVjimdY9f27du0lujVu60S2CT2qscauiVJM0DA8Udh8/exec";
@@ -288,6 +289,7 @@ function apiGet(params) {
 
 
 
+
 // ============================================================
 // INIT
 // ============================================================
@@ -393,7 +395,7 @@ function renderDia() {
         +(ej.nota?'<div class="ej-nota">'+ej.nota+'</div>':"")
         +'<div class="ej-acciones">'
         +'<a class="yt-btn" href="'+ytUrl+'" target="_blank" onclick="event.stopPropagation()">▶ YouTube</a>'
-        +(IMGS[ej.n]?'<div class="ej-fotos"><div class="ej-foto-wrap"><img class="ej-foto" src="'+IMGS[ej.n][0]+'" alt="inicio" loading="lazy"><div class="ej-foto-lbl">Inicio</div></div><div class="ej-foto-wrap"><img class="ej-foto" src="'+IMGS[ej.n][1]+'" alt="final" loading="lazy"><div class="ej-foto-lbl">Final</div></div></div>':'')
+        +(IMGS[ej.n]?'<div class="ej-fotos" style="grid-template-columns:1fr"><div class="ej-foto-wrap"><img class="ej-foto" src="'+IMGS[ej.n]+'" alt="ejercicio" loading="lazy" onerror="this.parentElement.parentElement.style.display=\'none\'"><div class="ej-foto-lbl">Demostración</div></div></div>':'')
         +(conPeso?'<span class="sync-ok" id="sy-'+kk+'">✓ guardado</span>':"")
         +'</div>'
         +(conPeso?'<div class="peso-row" onclick="event.stopPropagation()">'
