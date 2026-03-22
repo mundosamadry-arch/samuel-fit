@@ -56,7 +56,6 @@
   .sync-ok.show { opacity:1; }
   .ej-acciones { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
   .hist-btn { background:none; border:none; color:#666; font-size:0.68rem; cursor:pointer; padding:3px 6px; border-radius:4px; }
-  .gif-btn { background:rgba(255,87,34,0.1); border:1px solid rgba(255,87,34,0.2); color:var(--naranja); font-size:0.68rem; cursor:pointer; padding:3px 8px; border-radius:4px; font-family:'DM Sans'; }
   .yt-btn { background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.2); color:#ff4444; font-size:0.68rem; cursor:pointer; padding:3px 8px; border-radius:4px; font-family:'DM Sans'; text-decoration:none; display:inline-block; }
   .hist-popup { display:none; margin-top:6px; background:var(--negro); border:1px solid #333; border-radius:8px; padding:10px; font-size:0.73rem; }
   .hist-popup.show { display:block; }
@@ -64,16 +63,6 @@
   .hist-item:last-child { border-bottom:none; }
   .hist-item span:last-child { color:var(--naranja); font-weight:600; }
 
-  /* MODAL GIF */
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; padding:20px; }
-  .modal-overlay.show { display:flex; }
-  .modal { background:var(--gris); border-radius:16px; padding:20px; max-width:400px; width:100%; position:relative; }
-  .modal-titulo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; color:var(--naranja); margin-bottom:12px; padding-right:30px; line-height:1.2; }
-  .modal-gif { width:100%; border-radius:10px; min-height:200px; background:#111; display:block; }
-  .modal-gif-loading { width:100%; height:200px; background:#111; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--texto); font-size:0.8rem; }
-  .modal-yt { display:block; width:100%; margin-top:10px; padding:12px; background:rgba(255,0,0,0.15); border:1px solid rgba(255,0,0,0.3); border-radius:8px; color:#ff4444; font-family:'Bebas Neue'; font-size:1rem; letter-spacing:2px; text-align:center; text-decoration:none; }
-  .modal-close { position:absolute; top:14px; right:14px; background:none; border:none; color:var(--texto); font-size:1.4rem; cursor:pointer; line-height:1; padding:4px; }
-  .modal-close:hover { color:var(--blanco); }
 
   .lateral { padding:0 20px 20px; display:flex; flex-direction:column; gap:16px; }
   .card { background:var(--gris); border-radius:12px; padding:18px; border:1px solid #2a2a2a; }
@@ -98,18 +87,6 @@
 <body>
 
 <div class="saving-bar" id="saving-bar"></div>
-
-<!-- MODAL GIF -->
-<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="cerrarModal()">✕</button>
-    <div class="modal-titulo" id="modal-titulo">Ejercicio</div>
-    <div id="modal-gif-wrap">
-      <div class="modal-gif-loading">🎬 Cargando GIF...</div>
-    </div>
-    <a class="modal-yt" id="modal-yt" href="#" target="_blank">▶ Ver vídeo en YouTube</a>
-  </div>
-</div>
 
 <div class="header">
   <div class="logo">Samuel Fit <span>Plan de Entrenamiento · 2025</span></div>
@@ -160,7 +137,6 @@
 
 <script>
 var API = "https://script.google.com/macros/s/AKfycbwP_OqnxLgfW6ENwBBZSwXCtVjimdY9f27du0lujVu60S2CT2qscauiVJM0DA8Udh8/exec";
-var GIPHY_KEY = "KZ4LPxK5ZyjyEHJE9zsTLCC3RVGFgkS5";
 
 var PLAN = {
   lunes:{ titulo:"LUNES", subtitulo:"Fuerza A — Tren Superior + Core", tipo:"gimnasio", emoji:"🏋️", duracion:"55 min",
@@ -267,40 +243,6 @@ function apiGet(params) {
   return fetch(url).then(function(r){ return r.json(); }).catch(function(){ return {ok:false}; });
 }
 
-// ============================================================
-// MODAL GIF + YOUTUBE
-// ============================================================
-function abrirModal(nombreEj, gifQuery) {
-  document.getElementById("modal-titulo").textContent = nombreEj;
-  document.getElementById("modal-yt").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(gifQuery + " como hacer ejercicio tutorial");
-  var wrap = document.getElementById("modal-gif-wrap");
-  wrap.innerHTML = '<div class="modal-gif-loading">🎬 Cargando GIF...</div>';
-  document.getElementById("modal-overlay").classList.add("show");
-  document.body.style.overflow = "hidden";
-
-  // Buscar GIF en Giphy
-  var url = "https://api.giphy.com/v1/gifs/search?api_key=" + GIPHY_KEY + "&q=" + encodeURIComponent(gifQuery) + "&limit=1&rating=g&lang=en";
-  fetch(url)
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if (data.data && data.data.length > 0) {
-        var gifUrl = data.data[0].images.downsized_medium.url;
-        wrap.innerHTML = '<img class="modal-gif" src="' + gifUrl + '" alt="' + nombreEj + '">';
-      } else {
-        wrap.innerHTML = '<div class="modal-gif-loading" style="flex-direction:column;gap:8px;"><span>😅 GIF no encontrado</span><span style="font-size:0.7rem;">Usa el botón de YouTube</span></div>';
-      }
-    })
-    .catch(function(){
-      wrap.innerHTML = '<div class="modal-gif-loading" style="flex-direction:column;gap:8px;"><span>❌ Error al cargar</span><span style="font-size:0.7rem;">Usa el botón de YouTube</span></div>';
-    });
-}
-
-function cerrarModal(event) {
-  if (event && event.target !== document.getElementById("modal-overlay") && event.type !== "click") return;
-  if (event && event.target !== document.getElementById("modal-overlay") && !event.target.classList.contains("modal-close")) return;
-  document.getElementById("modal-overlay").classList.remove("show");
-  document.body.style.overflow = "";
-}
 
 // ============================================================
 // INIT
@@ -399,15 +341,13 @@ function renderDia() {
       var conPeso=["3","2","4"].includes(ej.s);
       var bNom=bloque.n.replace(/'/g,"\\'").replace(/"/g,"&quot;");
       var eNom=ej.n.replace(/'/g,"\\'");
-      var gifQ=(ej.gif||ej.n).replace(/'/g,"\\'");
-      var ytUrl="https://www.youtube.com/results?search_query="+encodeURIComponent((ej.gif||ej.n)+" ejercicio como hacer tutorial");
+      var ytUrl="https://www.youtube.com/results?search_query="+encodeURIComponent(ej.n+" ejercicio como hacer tutorial");
 
       html+='<div class="ejercicio'+(hecho?" completado":"")+'" id="ej-'+kk+'">'
         +'<div>'
         +'<div class="ej-nombre" onclick="toggle(\''+kk+'\',\''+bNom+'\')">'+ej.n+'</div>'
         +(ej.nota?'<div class="ej-nota">'+ej.nota+'</div>':"")
         +'<div class="ej-acciones">'
-        +'<button class="gif-btn" onclick="event.stopPropagation();abrirModal(\''+eNom+'\',\''+gifQ+'\')">🎬 Ver GIF</button>'
         +'<a class="yt-btn" href="'+ytUrl+'" target="_blank" onclick="event.stopPropagation()">▶ YouTube</a>'
         +(conPeso?'<span class="sync-ok" id="sy-'+kk+'">✓ guardado</span>':"")
         +'</div>'
