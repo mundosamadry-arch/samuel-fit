@@ -54,12 +54,27 @@
   .notas-input:focus { outline:none; border-color:var(--naranja); }
   .sync-ok { font-size:0.62rem; color:var(--verde); opacity:0; transition:opacity 0.3s; white-space:nowrap; }
   .sync-ok.show { opacity:1; }
-  .hist-btn { background:none; border:none; color:#666; font-size:0.68rem; cursor:pointer; padding:3px 6px; border-radius:4px; margin-top:4px; }
+  .ej-acciones { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .hist-btn { background:none; border:none; color:#666; font-size:0.68rem; cursor:pointer; padding:3px 6px; border-radius:4px; }
+  .gif-btn { background:rgba(255,87,34,0.1); border:1px solid rgba(255,87,34,0.2); color:var(--naranja); font-size:0.68rem; cursor:pointer; padding:3px 8px; border-radius:4px; font-family:'DM Sans'; }
+  .yt-btn { background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.2); color:#ff4444; font-size:0.68rem; cursor:pointer; padding:3px 8px; border-radius:4px; font-family:'DM Sans'; text-decoration:none; display:inline-block; }
   .hist-popup { display:none; margin-top:6px; background:var(--negro); border:1px solid #333; border-radius:8px; padding:10px; font-size:0.73rem; }
   .hist-popup.show { display:block; }
   .hist-item { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #222; color:var(--texto); }
   .hist-item:last-child { border-bottom:none; }
   .hist-item span:last-child { color:var(--naranja); font-weight:600; }
+
+  /* MODAL GIF */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:var(--gris); border-radius:16px; padding:20px; max-width:400px; width:100%; position:relative; }
+  .modal-titulo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; color:var(--naranja); margin-bottom:12px; padding-right:30px; line-height:1.2; }
+  .modal-gif { width:100%; border-radius:10px; min-height:200px; background:#111; display:block; }
+  .modal-gif-loading { width:100%; height:200px; background:#111; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--texto); font-size:0.8rem; }
+  .modal-yt { display:block; width:100%; margin-top:10px; padding:12px; background:rgba(255,0,0,0.15); border:1px solid rgba(255,0,0,0.3); border-radius:8px; color:#ff4444; font-family:'Bebas Neue'; font-size:1rem; letter-spacing:2px; text-align:center; text-decoration:none; }
+  .modal-close { position:absolute; top:14px; right:14px; background:none; border:none; color:var(--texto); font-size:1.4rem; cursor:pointer; line-height:1; padding:4px; }
+  .modal-close:hover { color:var(--blanco); }
+
   .lateral { padding:0 20px 20px; display:flex; flex-direction:column; gap:16px; }
   .card { background:var(--gris); border-radius:12px; padding:18px; border:1px solid #2a2a2a; }
   .card-titulo { font-size:0.6rem; letter-spacing:3px; text-transform:uppercase; color:var(--texto); margin-bottom:12px; }
@@ -83,6 +98,18 @@
 <body>
 
 <div class="saving-bar" id="saving-bar"></div>
+
+<!-- MODAL GIF -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal()">✕</button>
+    <div class="modal-titulo" id="modal-titulo">Ejercicio</div>
+    <div id="modal-gif-wrap">
+      <div class="modal-gif-loading">🎬 Cargando GIF...</div>
+    </div>
+    <a class="modal-yt" id="modal-yt" href="#" target="_blank">▶ Ver vídeo en YouTube</a>
+  </div>
+</div>
 
 <div class="header">
   <div class="logo">Samuel Fit <span>Plan de Entrenamiento · 2025</span></div>
@@ -133,32 +160,100 @@
 
 <script>
 var API = "https://script.google.com/macros/s/AKfycbwP_OqnxLgfW6ENwBBZSwXCtVjimdY9f27du0lujVu60S2CT2qscauiVJM0DA8Udh8/exec";
+var GIPHY_KEY = "KZ4LPxK5ZyjyEHJE9zsTLCC3RVGFgkS5";
 
 var PLAN = {
   lunes:{ titulo:"LUNES", subtitulo:"Fuerza A — Tren Superior + Core", tipo:"gimnasio", emoji:"🏋️", duracion:"55 min",
     bloques:[
-      {n:"🔥 Calentamiento (8 min)",e:[{n:"Movilidad articular (cuello, hombros, caderas, rodillas)",s:"—",r:"2 min"},{n:"Marcha en el sitio + brazos",s:"—",r:"3 min"},{n:"Flexión de cadera + apertura torácica",s:"2",r:"10 rep"}]},
-      {n:"💪 Bloque Principal (35 min)",e:[{n:"Press banca en máquina o con mancuernas",s:"3",r:"12 rep",nota:"Pecho — peso cómodo al inicio"},{n:"Remo con mancuerna apoyado (un brazo)",s:"3",r:"12 rep",nota:"Espalda recta siempre"},{n:"Press hombro con mancuernas (sentado)",s:"3",r:"10 rep",nota:"Rango completo"},{n:"Curl de bíceps alterno",s:"3",r:"12 rep",nota:"Sin balancear el tronco"},{n:"Extensión de tríceps en polea",s:"3",r:"12 rep",nota:"Codos pegados al cuerpo"}]},
-      {n:"🧱 Core (10 min)",e:[{n:"Plancha frontal",s:"3",r:"30 seg"},{n:"Dead bug (brazos y piernas opuestos)",s:"3",r:"10 rep",nota:"Lumbar pegada al suelo"},{n:"Plancha lateral (cada lado)",s:"2",r:"20 seg"}]},
-      {n:"🧘 Vuelta a la calma (5 min)",e:[{n:"Estiramiento pecho + hombros en pared",s:"—",r:"30 seg"},{n:"Estiramiento espalda (gato-vaca)",s:"—",r:"1 min"},{n:"Respiración profunda (inhala 4s, exhala 6s)",s:"—",r:"1 min"}]}
+      {n:"🔥 Calentamiento (8 min)",e:[
+        {n:"Movilidad articular (cuello, hombros, caderas, rodillas)",s:"—",r:"2 min",gif:"joint mobility warm up exercise"},
+        {n:"Marcha en el sitio + brazos",s:"—",r:"3 min",gif:"marching in place exercise"},
+        {n:"Flexión de cadera + apertura torácica",s:"2",r:"10 rep",gif:"hip flexor stretch exercise"}
+      ]},
+      {n:"💪 Bloque Principal (35 min)",e:[
+        {n:"Press banca en máquina o con mancuernas",s:"3",r:"12 rep",nota:"Pecho — peso cómodo al inicio",gif:"dumbbell bench press exercise"},
+        {n:"Remo con mancuerna apoyado (un brazo)",s:"3",r:"12 rep",nota:"Espalda recta siempre",gif:"dumbbell row exercise"},
+        {n:"Press hombro con mancuernas (sentado)",s:"3",r:"10 rep",nota:"Rango completo",gif:"seated dumbbell shoulder press"},
+        {n:"Curl de bíceps alterno",s:"3",r:"12 rep",nota:"Sin balancear el tronco",gif:"alternating dumbbell bicep curl"},
+        {n:"Extensión de tríceps en polea",s:"3",r:"12 rep",nota:"Codos pegados al cuerpo",gif:"tricep pushdown cable exercise"}
+      ]},
+      {n:"🧱 Core (10 min)",e:[
+        {n:"Plancha frontal",s:"3",r:"30 seg",gif:"plank exercise core"},
+        {n:"Dead bug (brazos y piernas opuestos)",s:"3",r:"10 rep",nota:"Lumbar pegada al suelo",gif:"dead bug exercise core"},
+        {n:"Plancha lateral (cada lado)",s:"2",r:"20 seg",gif:"side plank exercise"}
+      ]},
+      {n:"🧘 Vuelta a la calma (5 min)",e:[
+        {n:"Estiramiento pecho + hombros en pared",s:"—",r:"30 seg",gif:"chest shoulder stretch wall"},
+        {n:"Estiramiento espalda (gato-vaca)",s:"—",r:"1 min",gif:"cat cow stretch back"},
+        {n:"Respiración profunda (inhala 4s, exhala 6s)",s:"—",r:"1 min",gif:"deep breathing exercise"}
+      ]}
     ]},
   martes:{ titulo:"MARTES", subtitulo:"Agilidad y Movilidad en el Parque", tipo:"parque", emoji:"🌳", duracion:"45 min",
-    bloques:[{n:"🌳 Rutina de Parque",e:[{n:"Caminar rápido o marcha nórdica",s:"—",r:"15 min",nota:"Ritmo en el que puedas hablar justo"},{n:"Sentadilla en banco (profundidad controlada)",s:"3",r:"15 rep",nota:"Rodillas bien"},{n:"Fondos en banco (tríceps)",s:"3",r:"10 rep"},{n:"Estocadas laterales (sin saltar)",s:"3",r:"10/lado",nota:"Carga en glúteo, no en rodilla"},{n:"Equilibrio monopodal (cigüeña)",s:"3",r:"20 seg/pie",nota:"Estabilizadores de rodilla"},{n:"Movilidad de cadera: círculos y apertura",s:"2",r:"1 min"},{n:"Estiramientos finales",s:"—",r:"5 min"}]}]},
+    bloques:[{n:"🌳 Rutina de Parque",e:[
+      {n:"Caminar rápido o marcha nórdica",s:"—",r:"15 min",nota:"Ritmo en el que puedas hablar justo",gif:"brisk walking exercise"},
+      {n:"Sentadilla en banco (profundidad controlada)",s:"3",r:"15 rep",nota:"Rodillas bien",gif:"box squat exercise"},
+      {n:"Fondos en banco (tríceps)",s:"3",r:"10 rep",gif:"tricep dips bench exercise"},
+      {n:"Estocadas laterales (sin saltar)",s:"3",r:"10/lado",nota:"Carga en glúteo, no en rodilla",gif:"lateral lunge exercise"},
+      {n:"Equilibrio monopodal (cigüeña)",s:"3",r:"20 seg/pie",nota:"Estabilizadores de rodilla",gif:"single leg balance exercise"},
+      {n:"Movilidad de cadera: círculos y apertura",s:"2",r:"1 min",gif:"hip circles mobility exercise"},
+      {n:"Estiramientos finales",s:"—",r:"5 min",gif:"full body stretching routine"}
+    ]}]},
   miercoles:{ titulo:"MIÉRCOLES", subtitulo:"Fuerza B — Tren Inferior + Core", tipo:"gimnasio", emoji:"🦵", duracion:"55 min",
     bloques:[
-      {n:"🔥 Calentamiento (8 min)",e:[{n:"Movilidad de cadera y tobillo",s:"—",r:"3 min",nota:"Esencial antes de piernas"},{n:"Puente de glúteos en suelo",s:"2",r:"15 rep"},{n:"Rotaciones de rodilla (sentado)",s:"2",r:"10 rep",nota:"Solo hasta donde no moleste"}]},
-      {n:"🦵 Piernas Adaptadas (35 min)",e:[{n:"Prensa de piernas (máquina)",s:"4",r:"15 rep",nota:"Profundidad controlada — ideal con meniscos"},{n:"Extensión de cuádriceps (máquina)",s:"3",r:"12 rep",nota:"Rango parcial si hay molestia"},{n:"Curl femoral tumbado (máquina)",s:"3",r:"12 rep",nota:"Fundamental para estabilizar rodilla"},{n:"Hip thrust con mancuerna",s:"3",r:"15 rep",nota:"Sin presión en rodillas"},{n:"Pantorrilla de pie (máquina o escalón)",s:"3",r:"20 rep",nota:"Sin rebote"}]},
-      {n:"🧱 Core + Estabilidad (10 min)",e:[{n:"Bird dog",s:"3",r:"10/lado"},{n:"Crunch abdominal controlado",s:"3",r:"15 rep",nota:"Sin tirar del cuello"},{n:"Plancha con elevación de brazo alterna",s:"2",r:"8/lado"}]},
-      {n:"🧘 Vuelta a la calma (5 min)",e:[{n:"Estiramiento cuádriceps de pie",s:"—",r:"30 seg/lado"},{n:"Estiramiento isquiotibial sentado",s:"—",r:"30 seg/lado"},{n:"Estiramiento glúteo (figura 4)",s:"—",r:"30 seg/lado",nota:"Tumbado, suave"}]}
+      {n:"🔥 Calentamiento (8 min)",e:[
+        {n:"Movilidad de cadera y tobillo",s:"—",r:"3 min",nota:"Esencial antes de piernas",gif:"hip ankle mobility warm up"},
+        {n:"Puente de glúteos en suelo",s:"2",r:"15 rep",gif:"glute bridge exercise floor"},
+        {n:"Rotaciones de rodilla (sentado)",s:"2",r:"10 rep",nota:"Solo hasta donde no moleste",gif:"knee rotation exercise seated"}
+      ]},
+      {n:"🦵 Piernas Adaptadas (35 min)",e:[
+        {n:"Prensa de piernas (máquina)",s:"4",r:"15 rep",nota:"Profundidad controlada — ideal con meniscos",gif:"leg press machine exercise"},
+        {n:"Extensión de cuádriceps (máquina)",s:"3",r:"12 rep",nota:"Rango parcial si hay molestia",gif:"leg extension machine exercise"},
+        {n:"Curl femoral tumbado (máquina)",s:"3",r:"12 rep",nota:"Fundamental para estabilizar rodilla",gif:"lying leg curl machine exercise"},
+        {n:"Hip thrust con mancuerna",s:"3",r:"15 rep",nota:"Sin presión en rodillas",gif:"hip thrust dumbbell exercise"},
+        {n:"Pantorrilla de pie (máquina o escalón)",s:"3",r:"20 rep",nota:"Sin rebote",gif:"standing calf raise exercise"}
+      ]},
+      {n:"🧱 Core + Estabilidad (10 min)",e:[
+        {n:"Bird dog",s:"3",r:"10/lado",gif:"bird dog exercise core stability"},
+        {n:"Crunch abdominal controlado",s:"3",r:"15 rep",nota:"Sin tirar del cuello",gif:"abdominal crunch exercise"},
+        {n:"Plancha con elevación de brazo alterna",s:"2",r:"8/lado",gif:"plank arm raise exercise"}
+      ]},
+      {n:"🧘 Vuelta a la calma (5 min)",e:[
+        {n:"Estiramiento cuádriceps de pie",s:"—",r:"30 seg/lado",gif:"standing quad stretch exercise"},
+        {n:"Estiramiento isquiotibial sentado",s:"—",r:"30 seg/lado",gif:"seated hamstring stretch exercise"},
+        {n:"Estiramiento glúteo (figura 4)",s:"—",r:"30 seg/lado",nota:"Tumbado, suave",gif:"figure four glute stretch exercise"}
+      ]}
     ]},
   jueves:{ titulo:"JUEVES", subtitulo:"Cardio Suave y Agilidad en el Parque", tipo:"parque", emoji:"🌳", duracion:"45 min",
-    bloques:[{n:"🌳 Sesión de Parque",e:[{n:"Caminata rápida o bicicleta",s:"—",r:"20 min",nota:"Zona 2 — ritmo sostenible"},{n:"Flexiones en suelo o inclinadas en banco",s:"3",r:"10-15 rep"},{n:"Sentadilla con pausa en banco",s:"3",r:"12 rep",nota:"Control total — sin rebote"},{n:"Zancadas hacia adelante (sin salto)",s:"2",r:"8/pierna",nota:"Rodilla no pasa el pie"},{n:"Coordinación: paso lateral + cruce",s:"3",r:"20 seg",nota:"Agilidad suave"},{n:"Estiramiento completo",s:"—",r:"5 min"}]}]},
+    bloques:[{n:"🌳 Sesión de Parque",e:[
+      {n:"Caminata rápida o bicicleta",s:"—",r:"20 min",nota:"Zona 2 — ritmo sostenible",gif:"brisk walking cardio exercise"},
+      {n:"Flexiones en suelo o inclinadas en banco",s:"3",r:"10-15 rep",gif:"push up exercise"},
+      {n:"Sentadilla con pausa en banco",s:"3",r:"12 rep",nota:"Control total — sin rebote",gif:"pause squat exercise bench"},
+      {n:"Zancadas hacia adelante (sin salto)",s:"2",r:"8/pierna",nota:"Rodilla no pasa el pie",gif:"forward lunge exercise"},
+      {n:"Coordinación: paso lateral + cruce",s:"3",r:"20 seg",nota:"Agilidad suave",gif:"lateral shuffle coordination exercise"},
+      {n:"Estiramiento completo",s:"—",r:"5 min",gif:"full body cool down stretch"}
+    ]}]},
   viernes:{ titulo:"VIERNES", subtitulo:"Full Body — Integración y Potencia", tipo:"gimnasio", emoji:"⚡", duracion:"55 min",
     bloques:[
-      {n:"🔥 Calentamiento (8 min)",e:[{n:"Movilidad completa de cabeza a pies",s:"—",r:"5 min"},{n:"Remo con banda elástica (activar espalda)",s:"2",r:"15 rep"}]},
-      {n:"⚡ Full Body Circuito (35 min)",e:[{n:"Sentadilla goblet con mancuerna",s:"3",r:"12 rep",nota:"Peso en pecho — postura perfecta"},{n:"Remo con barra o en máquina",s:"3",r:"12 rep"},{n:"Press inclinado con mancuernas",s:"3",r:"12 rep"},{n:"Romanian deadlift con mancuerna",s:"3",r:"12 rep",nota:"Bisagra de cadera pura"},{n:"Remo invertido en barra baja o TRX",s:"3",r:"10 rep"},{n:"Press militar con mancuernas de pie",s:"3",r:"10 rep",nota:"Core activado, no arquear"}]},
-      {n:"🎯 Finisher Core (7 min)",e:[{n:"Plancha",s:"3",r:"45 seg"},{n:"Russian twist con peso ligero",s:"2",r:"20 rep"},{n:"Elevación de piernas tumbado",s:"2",r:"12 rep",nota:"Lumbar pegada al suelo"}]},
-      {n:"🧘 Vuelta a la calma (5 min)",e:[{n:"Estiramiento completo — te lo has ganado 💪",s:"—",r:"5 min"}]}
+      {n:"🔥 Calentamiento (8 min)",e:[
+        {n:"Movilidad completa de cabeza a pies",s:"—",r:"5 min",gif:"full body mobility warm up"},
+        {n:"Remo con banda elástica (activar espalda)",s:"2",r:"15 rep",gif:"resistance band row exercise"}
+      ]},
+      {n:"⚡ Full Body Circuito (35 min)",e:[
+        {n:"Sentadilla goblet con mancuerna",s:"3",r:"12 rep",nota:"Peso en pecho — postura perfecta",gif:"goblet squat dumbbell exercise"},
+        {n:"Remo con barra o en máquina",s:"3",r:"12 rep",gif:"barbell row exercise back"},
+        {n:"Press inclinado con mancuernas",s:"3",r:"12 rep",gif:"incline dumbbell press exercise"},
+        {n:"Romanian deadlift con mancuerna",s:"3",r:"12 rep",nota:"Bisagra de cadera pura",gif:"romanian deadlift dumbbell exercise"},
+        {n:"Remo invertido en barra baja o TRX",s:"3",r:"10 rep",gif:"inverted row exercise"},
+        {n:"Press militar con mancuernas de pie",s:"3",r:"10 rep",nota:"Core activado, no arquear",gif:"standing dumbbell overhead press"}
+      ]},
+      {n:"🎯 Finisher Core (7 min)",e:[
+        {n:"Plancha",s:"3",r:"45 seg",gif:"plank hold exercise"},
+        {n:"Russian twist con peso ligero",s:"2",r:"20 rep",gif:"russian twist exercise core"},
+        {n:"Elevación de piernas tumbado",s:"2",r:"12 rep",nota:"Lumbar pegada al suelo",gif:"lying leg raise exercise"}
+      ]},
+      {n:"🧘 Vuelta a la calma (5 min)",e:[
+        {n:"Estiramiento completo — te lo has ganado 💪",s:"—",r:"5 min",gif:"full body stretching cool down"}
+      ]}
     ]},
   sabado:null, domingo:null
 };
@@ -168,12 +263,47 @@ var diaActual="lunes", completados={}, pesos={}, notas={}, syncTimers={};
 function k(dia,bi,ei){ return dia+"-"+bi+"-"+ei; }
 
 function apiGet(params) {
-  var url = API+"?"+Object.keys(params).map(function(k){ return k+"="+encodeURIComponent(params[k]); }).join("&");
+  var url=API+"?"+Object.keys(params).map(function(k){ return k+"="+encodeURIComponent(params[k]); }).join("&");
   return fetch(url).then(function(r){ return r.json(); }).catch(function(){ return {ok:false}; });
 }
 
 // ============================================================
-// INIT — carga estado desde Sheets al arrancar
+// MODAL GIF + YOUTUBE
+// ============================================================
+function abrirModal(nombreEj, gifQuery) {
+  document.getElementById("modal-titulo").textContent = nombreEj;
+  document.getElementById("modal-yt").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(gifQuery + " como hacer ejercicio tutorial");
+  var wrap = document.getElementById("modal-gif-wrap");
+  wrap.innerHTML = '<div class="modal-gif-loading">🎬 Cargando GIF...</div>';
+  document.getElementById("modal-overlay").classList.add("show");
+  document.body.style.overflow = "hidden";
+
+  // Buscar GIF en Giphy
+  var url = "https://api.giphy.com/v1/gifs/search?api_key=" + GIPHY_KEY + "&q=" + encodeURIComponent(gifQuery) + "&limit=1&rating=g&lang=en";
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.data && data.data.length > 0) {
+        var gifUrl = data.data[0].images.downsized_medium.url;
+        wrap.innerHTML = '<img class="modal-gif" src="' + gifUrl + '" alt="' + nombreEj + '">';
+      } else {
+        wrap.innerHTML = '<div class="modal-gif-loading" style="flex-direction:column;gap:8px;"><span>😅 GIF no encontrado</span><span style="font-size:0.7rem;">Usa el botón de YouTube</span></div>';
+      }
+    })
+    .catch(function(){
+      wrap.innerHTML = '<div class="modal-gif-loading" style="flex-direction:column;gap:8px;"><span>❌ Error al cargar</span><span style="font-size:0.7rem;">Usa el botón de YouTube</span></div>';
+    });
+}
+
+function cerrarModal(event) {
+  if (event && event.target !== document.getElementById("modal-overlay") && event.type !== "click") return;
+  if (event && event.target !== document.getElementById("modal-overlay") && !event.target.classList.contains("modal-close")) return;
+  document.getElementById("modal-overlay").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+// ============================================================
+// INIT
 // ============================================================
 window.onload = function() {
   cargarLocal();
@@ -183,50 +313,27 @@ window.onload = function() {
   renderDia();
   cargarSheetUrl();
   cargarResumen();
-  // Sincronizar estado del día actual desde Sheets
   sincronizarEstadoDesdeSheets(diaActual);
 };
 
 function sincronizarEstadoDesdeSheets(dia) {
-  if (!PLAN[dia]) return; // día de descanso
-  var banner = document.getElementById("sync-banner");
+  if (!PLAN[dia]) return;
+  var banner=document.getElementById("sync-banner");
   banner.classList.add("show");
-
-  apiGet({ action:"estadoHoy", dia:dia }).then(function(resp) {
+  apiGet({action:"estadoHoy",dia:dia}).then(function(resp){
     banner.classList.remove("show");
-    if (!resp || !resp.ejercicios || resp.ejercicios.length === 0) return;
-
-    var d = PLAN[dia];
-    var cambios = false;
-
-    // Para cada ejercicio del plan, ver si está en Sheets
-    d.bloques.forEach(function(bloque, bi) {
-      bloque.e.forEach(function(ej, ei) {
-        var kk = k(dia, bi, ei);
-        var enSheets = resp.ejercicios.indexOf(ej.n) !== -1;
-
-        if (enSheets && !completados[kk]) {
-          // Sheets lo tiene pero local no → marcar
-          completados[kk] = true;
-          if (resp.pesos && resp.pesos[ej.n]) pesos[kk] = resp.pesos[ej.n];
-          if (resp.notas && resp.notas[ej.n]) notas[kk] = resp.notas[ej.n];
-          cambios = true;
-        } else if (!enSheets && completados[kk]) {
-          // Local lo tiene pero Sheets no → desmarcar (Sheets es la fuente de verdad)
-          completados[kk] = false;
-          cambios = true;
-        }
+    if(!resp||!resp.ejercicios||resp.ejercicios.length===0) return;
+    var d=PLAN[dia], cambios=false;
+    d.bloques.forEach(function(bloque,bi){
+      bloque.e.forEach(function(ej,ei){
+        var kk=k(dia,bi,ei);
+        var enSheets=resp.ejercicios.indexOf(ej.n)!==-1;
+        if(enSheets&&!completados[kk]){ completados[kk]=true; if(resp.pesos&&resp.pesos[ej.n])pesos[kk]=resp.pesos[ej.n]; if(resp.notas&&resp.notas[ej.n])notas[kk]=resp.notas[ej.n]; cambios=true; }
+        else if(!enSheets&&completados[kk]){ completados[kk]=false; cambios=true; }
       });
     });
-
-    if (cambios) {
-      guardarLocal();
-      renderDia(); // re-renderizar con el estado correcto
-      mostrarToast("✓ Sincronizado con Sheets");
-    }
-  }).catch(function() {
-    banner.classList.remove("show");
-  });
+    if(cambios){ guardarLocal(); renderDia(); mostrarToast("✓ Sincronizado con Sheets"); }
+  }).catch(function(){ banner.classList.remove("show"); });
 }
 
 function cargarResumen() {
@@ -292,14 +399,21 @@ function renderDia() {
       var conPeso=["3","2","4"].includes(ej.s);
       var bNom=bloque.n.replace(/'/g,"\\'").replace(/"/g,"&quot;");
       var eNom=ej.n.replace(/'/g,"\\'");
+      var gifQ=(ej.gif||ej.n).replace(/'/g,"\\'");
+      var ytUrl="https://www.youtube.com/results?search_query="+encodeURIComponent((ej.gif||ej.n)+" ejercicio como hacer tutorial");
+
       html+='<div class="ejercicio'+(hecho?" completado":"")+'" id="ej-'+kk+'">'
         +'<div>'
         +'<div class="ej-nombre" onclick="toggle(\''+kk+'\',\''+bNom+'\')">'+ej.n+'</div>'
         +(ej.nota?'<div class="ej-nota">'+ej.nota+'</div>':"")
+        +'<div class="ej-acciones">'
+        +'<button class="gif-btn" onclick="event.stopPropagation();abrirModal(\''+eNom+'\',\''+gifQ+'\')">🎬 Ver GIF</button>'
+        +'<a class="yt-btn" href="'+ytUrl+'" target="_blank" onclick="event.stopPropagation()">▶ YouTube</a>'
+        +(conPeso?'<span class="sync-ok" id="sy-'+kk+'">✓ guardado</span>':"")
+        +'</div>'
         +(conPeso?'<div class="peso-row" onclick="event.stopPropagation()">'
           +'<input class="peso-input" type="text" inputmode="decimal" placeholder="kg" value="'+pv+'" onchange="cambioPeso(\''+kk+'\',this.value)" oninput="debSync(\''+kk+'\')">'
           +'<input class="notas-input" type="text" placeholder="notas..." value="'+nv+'" onchange="cambioNotas(\''+kk+'\',this.value)" oninput="debSync(\''+kk+'\')">'
-          +'<span class="sync-ok" id="sy-'+kk+'">✓</span>'
           +'</div>'
           +'<div onclick="event.stopPropagation()"><button class="hist-btn" onclick="toggleHist(\''+kk+'\',\''+eNom+'\')">📈 historial</button>'
           +'<div class="hist-popup" id="hi-'+kk+'"><span style="color:var(--texto)">Cargando...</span></div></div>'
